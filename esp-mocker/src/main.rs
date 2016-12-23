@@ -1,5 +1,6 @@
 extern crate rand;
 
+use std::io::BufWriter;
 use std::io::prelude::*;
 use std::net::TcpStream;
 use std::thread::sleep;
@@ -8,34 +9,33 @@ use std::time::Duration;
 use rand::distributions::{IndependentSample, Range};
 
 fn main() {
-    let mut stream;
+    let mut writer;
 
     // Attempt to connect to a host and `panic!`` if fail.
     match TcpStream::connect("127.0.0.1:12345") {
-        Ok(tcp_stream) => {
-            stream = tcp_stream;
+        Ok(stream) => {
+            writer = BufWriter::new(stream);
         }
         Err(e) => {
             panic!("{:?}", e);
         }
     }
 
-    let mut rng = rand::thread_rng();
-    let number_between = Range::new(15, 30);
-    let mut temperature;
-
     loop {
-        temperature = number_between.ind_sample(&mut rng);
+        let mut rng = rand::thread_rng();
+        let number_between = Range::new(15, 30);
+        let temperature = number_between.ind_sample(&mut rng).to_string();
 
-        match stream.write(temperature.to_string().as_bytes()) {
+        let _ = writer.write_fmt(format_args!("{}\n", temperature));
+        match writer.flush() {
             Ok(_) => {
-                println!("Temperature: {}C", temperature);
+                println!("Temperature: {}", temperature);
             }
             Err(e) => {
                 println!("{:?}", e); /* Write failed. Print the error and continue. */
             }
         }
 
-        sleep(Duration::from_secs(60));
+        sleep(Duration::from_secs(5));
     }
 }

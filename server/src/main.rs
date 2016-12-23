@@ -1,14 +1,27 @@
+use std::io::BufReader;
 use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
 use std::str;
 use std::thread;
 
 
-fn handle_client(client_id: u8, mut stream: TcpStream) {
-    let mut stream_buffer: [u8; 8] = [0; 8];
+fn handle_client(client_id: u8, stream: TcpStream) {
+    let mut reader = BufReader::with_capacity(8, stream);
 
-    stream.read(&mut stream_buffer).unwrap();
-    println!("From client {}: {}", client_id, str::from_utf8(&stream_buffer).unwrap());
+    loop {
+        let mut line = String::new();
+        match reader.read_line(&mut line) {
+            Ok(bytes_read) => {
+                if bytes_read == 0 {
+                    return;
+                }
+            }
+            Err(e) => {
+                panic!("{:?}", e);
+            }
+        }
+        print!("Client {}: {}", client_id, line);
+    }
 }
 
 fn main() {
@@ -19,7 +32,7 @@ fn main() {
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
-                thread::spawn(move || handle_client(client_id, stream));
+                thread::spawn(move|| handle_client(client_id, stream));
                 client_id += 1;
             }
             Err(e) => {
