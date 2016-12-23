@@ -1,0 +1,7 @@
+[package]
+name = "esp-mocker"
+version = "0.1.0"
+authors = ["Shaun Karran <shaun.karran@gmail.com>"]
+
+[dependencies]
+rand = "0.3"
