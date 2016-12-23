@@ -1,0 +1,6 @@
+[package]
+name = "homesense-server"
+version = "0.1.0"
+authors = ["Shaun Karran <shaun.karran@gmail.com>"]
+
+[dependencies]
