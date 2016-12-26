@@ -76,7 +76,6 @@ void loop() {
     client.stop();
     Serial.println("Disconnected from host.");
 
-    // TODO Go to sleep here.
     Serial.println("Going to sleep.\n");
     delay(100);
     ESP.deepSleep(SECONDS_TO_SLEEP * 1e6); // Argument is in micro seconds. Multiply by 1e6 for seconds.
