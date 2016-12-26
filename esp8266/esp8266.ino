@@ -10,6 +10,9 @@
 // const char* PASSWORD = "mypassword";
 #include "wifi_credentials.h"
 
+// Must be unique for every ESP connecting to the same server.
+const uint8_t DEVICE_ID = 0;
+
 // IP and port to connect and send data.
 const char* HOST = "192.168.1.12";
 const uint16_t PORT = 12345;
@@ -56,18 +59,17 @@ void loop() {
         Serial.println("DONE.");
 
         float temperature = sensors.getTempCByIndex(0);
-
         if (temperature == 85.0) {
             Serial.println("Error communicating with thermometer.");
         } else if (temperature == 127.0 || temperature == -127.00) {
             Serial.println("Thermometer error.");
         } else {
-            Serial.print("Temperature for device 0 is: ");
-            Serial.println(temperature);
+            String data = create_json(temperature);
+            Serial.print("Sending data: ");
+            Serial.println(data);
 
-            Serial.println("Sending temperature data to the server.");
-            client.print(temperature);
-            client.print('\n'); // Server expects an end line char at the end of every message.
+            Serial.println("Sending data to the server.");
+            client.print(data);
         }
     } else {
         Serial.println("Connection failed!");
@@ -80,3 +82,17 @@ void loop() {
     delay(100);
     ESP.deepSleep(SECONDS_TO_SLEEP * 1e6); // Argument is in micro seconds. Multiply by 1e6 for seconds.
 }
+
+String create_json(float temperature) {
+    String json = "{";
+    json += "device_id: ";
+    json += DEVICE_ID;
+    json += ", ";
+    json += "temperature: ";
+    json += temperature;
+    json += "}";
+    json += "\n";
+
+    return json;
+}
+
