@@ -4,3 +4,5 @@ version = "0.1.0"
 authors = ["Shaun Karran <shaun.karran@gmail.com>"]
 
 [dependencies]
+chrono = "0.2"
+rustc-serialize = "0.3"
