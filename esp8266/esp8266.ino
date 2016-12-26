@@ -18,7 +18,7 @@ const char* HOST = "192.168.1.12";
 const uint16_t PORT = 12345;
 
 // Time to sleep (in seconds).
-const uint16_t SECONDS_TO_SLEEP = 10;
+const uint16_t SECONDS_TO_SLEEP = 300;
 
 // Data wire is plugged into pin D1 on the ESP.
 const uint8_t ONE_WIRE_BUS = D1;
@@ -85,10 +85,10 @@ void loop() {
 
 String create_json(float temperature) {
     String json = "{";
-    json += "device_id: ";
+    json += "\"device_id\": ";
     json += DEVICE_ID;
     json += ", ";
-    json += "temperature: ";
+    json += "\"temperature\": ";
     json += temperature;
     json += "}";
     json += "\n";
