@@ -25,16 +25,7 @@ fn handle_client(stream: TcpStream) {
 
     loop {
         let mut line = String::new();
-        match reader.read_line(&mut line) {
-            Ok(bytes_read) => {
-                if bytes_read == 0 {
-                    return;
-                }
-            }
-            Err(e) => {
-                panic!("{:?}", e);
-            }
-        }
+        reader.read_line(&mut line).unwrap();
 
         // Attempt to decode the recieved data.
         // If it fails print the error and continue to waiting for the next message.
