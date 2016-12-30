@@ -5,4 +5,7 @@ authors = ["Shaun Karran <shaun.karran@gmail.com>"]
 
 [dependencies]
 chrono = "0.2"
+diesel = { version = "0.9.0", features = [ "chrono"] }
+diesel_codegen = { version = "0.9.0", features = ["postgres"] }
+dotenv = "0.8.0"
 rustc-serialize = "0.3"
