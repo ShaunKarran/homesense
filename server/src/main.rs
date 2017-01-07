@@ -9,7 +9,7 @@ use std::net::{TcpListener, TcpStream};
 use std::str;
 use std::thread;
 
-use chrono::{Local, NaiveDateTime};
+use chrono::Local;
 use rustc_serialize::json;
 
 // These are for diesel. Probably move all this stuff once its working.
