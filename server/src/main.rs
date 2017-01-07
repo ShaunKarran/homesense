@@ -21,7 +21,7 @@ use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use dotenv::dotenv;
 use std::env;
-use self::models::{NewTemperature};
+use self::models::{NewReading};
 
 pub mod schema;
 pub mod models;
@@ -30,7 +30,7 @@ pub mod models;
 #[derive(Debug)] // Make printable.
 #[derive(RustcDecodable, RustcEncodable)] // Allows decoding of the sensor data.
 pub struct SensorData {
-    device_id: u8,
+    device_id: i32,
     temperature: f32,
 }
 
@@ -47,7 +47,7 @@ pub fn establish_connection() -> PgConnection {
 // and is handled as a new client. This function should probably be changed to not loop.
 fn handle_client(stream: TcpStream) {
     let db_connection = establish_connection();
-    let mut reader = BufReader::with_capacity(8, stream);
+    let mut reader = BufReader::new(stream);
     let mut sensor_data: SensorData;
 
     loop {
@@ -64,23 +64,24 @@ fn handle_client(stream: TcpStream) {
             }
         }
 
-        let local_time = Local::now();
-        let local_time_string = local_time.format("%d-%m-%Y %H:%M:%S").to_string();
-
-        // Add data to the database.
-        let format = "%d-%m-%Y %H:%M:%S";
-        let new_temperature = NewTemperature {
-            recorded_at: NaiveDateTime::parse_from_str(&local_time_string, &format).unwrap(),
+        // NOTE Since the values might be None when a sensor doesnt exist
+        // maybe they will need to be Option type?
+        let new_reading = NewReading {
+            recorded_at: Local::now().naive_local(),
+            device: sensor_data.device_id,
             temperature: sensor_data.temperature,
+            humidity: 0.0,
+            light: 0.0,
         };
 
-        use schema::temperatures;
-
-        diesel::insert(&new_temperature).into(temperatures::table)
+        // Add data to the database.
+        use schema::readings;
+        diesel::insert(&new_reading)
+            .into(readings::table)
             .execute(&db_connection)
             .expect("Error saving new post");
 
-        println!("{}: {:?}", local_time_string, sensor_data);
+        println!("{:?}", new_reading);
     }
 }
 
