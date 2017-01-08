@@ -1,31 +1,27 @@
 #![feature(proc_macro)]
 
 extern crate chrono;
-extern crate rustc_serialize;
-
-use std::io::BufReader;
-use std::io::prelude::*;
-use std::net::{TcpListener, TcpStream};
-use std::str;
-use std::thread;
-
-use chrono::Local;
-use rustc_serialize::json;
-
-// These are for diesel. Probably move all this stuff once its working.
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_codegen;
 extern crate dotenv;
+extern crate rustc_serialize;
 
-use diesel::prelude::*;
-use diesel::pg::PgConnection;
-use dotenv::dotenv;
 use std::env;
-use self::models::{NewReading};
+use std::io::BufReader;
+use std::io::prelude::*;
+use std::net::{TcpListener, TcpStream};
+use std::thread;
+
+use chrono::Local;
+use diesel::pg::PgConnection;
+use diesel::prelude::*;
+use dotenv::dotenv;
+use rustc_serialize::json;
+
+use self::models::NewReading;
 
 pub mod schema;
 pub mod models;
-
 
 #[derive(Debug)] // Make printable.
 #[derive(RustcDecodable, RustcEncodable)] // Allows decoding of the sensor data.
@@ -34,55 +30,48 @@ pub struct SensorData {
     temperature: f32,
 }
 
-pub fn establish_connection() -> PgConnection {
+fn establish_connection() -> PgConnection {
     dotenv().ok();
 
     let database_url = env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set");
+
     PgConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url))
 }
 
-// NOTE The deep sleep design for the esp means thats every time it wakes it up it connects again
-// and is handled as a new client. This function should probably be changed to not loop.
-fn handle_client(stream: TcpStream) {
-    let db_connection = establish_connection();
-    let mut reader = BufReader::new(stream);
-    let mut sensor_data: SensorData;
+fn decode_sensor_data(data_string: &String) -> NewReading {
+    // Attempt to decode the recieved data.
+    // NOTE Handle this unwrap properly.
+    let sensor_data: SensorData = json::decode(data_string).unwrap();
 
-    loop {
-        let mut line = String::new();
-        reader.read_line(&mut line).unwrap();
-
-        // Attempt to decode the recieved data.
-        match json::decode(&line) {
-            Ok(decoded) => {
-                sensor_data = decoded;
-            }
-            Err(_) => {
-                return;
-            }
-        }
-
-        // NOTE Since the values might be None when a sensor doesnt exist
-        // maybe they will need to be Option type?
-        let new_reading = NewReading {
-            recorded_at: Local::now().naive_local(),
-            device: sensor_data.device_id,
-            temperature: sensor_data.temperature,
-            humidity: 0.0,
-            light: 0.0,
-        };
-
-        // Add data to the database.
-        use schema::readings;
-        diesel::insert(&new_reading)
-            .into(readings::table)
-            .execute(&db_connection)
-            .expect("Error saving new post");
-
-        println!("{:?}", new_reading);
+    // NOTE Since the values might be None when a sensor doesnt exist
+    // maybe they will need to be Option type?
+    NewReading {
+        recorded_at: Local::now().naive_local(),
+        device: sensor_data.device_id,
+        temperature: sensor_data.temperature,
+        humidity: 0.0,
+        light: 0.0,
     }
+}
+
+fn handle_client(stream: TcpStream) {
+    let mut reader = BufReader::new(stream);
+    let mut line = String::new();
+
+    reader.read_line(&mut line).unwrap();
+    let new_reading = decode_sensor_data(&line);
+
+    // Add data to the database.
+    let db_connection = establish_connection();
+    use schema::readings;
+    diesel::insert(&new_reading)
+        .into(readings::table)
+        .execute(&db_connection)
+        .expect("Error saving new post");
+
+    println!("{:?}", new_reading);
 }
 
 fn main() {
