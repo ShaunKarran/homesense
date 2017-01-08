@@ -1,5 +1,4 @@
 // NOTE Had trouble getting DateTime (with timezone) working so using NaiveDateTime for now.
-// Must include "chrono" as a diesel feature in `Cargo.toml`.
 use chrono::{NaiveDateTime};
 use super::schema::readings;
 
@@ -7,18 +6,19 @@ use super::schema::readings;
 pub struct Reading {
     pub id: i32,
     pub recorded_at: NaiveDateTime,
-    pub device: i32,
-    pub temperature: f32,
-    pub humidity: f32,
-    pub light: f32,
+    pub device_id: i32,
+    pub temperature: Option<f32>,
+    pub humidity: Option<f32>,
+    pub light: Option<f32>,
 }
 
-#[derive(Debug, Insertable)]
+
+#[derive(Debug, Insertable, RustcDecodable)]
 #[table_name="readings"]
 pub struct NewReading {
-    pub recorded_at: NaiveDateTime,
-    pub device: i32,
-    pub temperature: f32,
-    pub humidity: f32,
-    pub light: f32,
+    pub recorded_at: Option<NaiveDateTime>,
+    pub device_id: i32,
+    pub temperature: Option<f32>,
+    pub humidity: Option<f32>,
+    pub light: Option<f32>,
 }

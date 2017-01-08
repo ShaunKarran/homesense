@@ -10,8 +10,8 @@ CREATE TABLE devices (
 
 CREATE TABLE readings (
     id SERIAL PRIMARY KEY,
-    recorded_at TIMESTAMP NOT NULL,
-    device SERIAL REFERENCES Devices(id),
+    recorded_at TIMESTAMP,
+    device_id SERIAL REFERENCES Devices(id),
     temperature REAL,
     humidity REAL,
     light REAL
