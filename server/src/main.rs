@@ -29,10 +29,10 @@ fn establish_connection() -> PgConnection {
     dotenv().ok();
 
     let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
+        .expect("DATABASE_URL must be set.");
 
     PgConnection::establish(&database_url)
-        .expect(&format!("Error connecting to {}", database_url))
+        .expect(&format!("Error connecting to {}.", database_url))
 }
 
 fn handle_client(stream: TcpStream) {
@@ -40,10 +40,12 @@ fn handle_client(stream: TcpStream) {
     let mut line = String::new();
 
     // Read the contents from the tcp stream into a String.
-    reader.read_line(&mut line).unwrap();
+    reader.read_line(&mut line)
+        .expect("Error reading line from BufReader.");
 
     // Decode the data into a NewReading and record the current date & time.
-    let mut new_reading: NewReading = json::decode(&line).unwrap();
+    let mut new_reading: NewReading = json::decode(&line)
+        .expect("Error decoding json data.");
     new_reading.recorded_at = Some(Local::now().naive_local());
 
     // Add the NewReading to the database.
@@ -51,7 +53,7 @@ fn handle_client(stream: TcpStream) {
     diesel::insert(&new_reading)
         .into(readings::table)
         .execute(&db_connection)
-        .expect("Error saving new reading.");
+        .expect("Error saving new reading to database.");
 
     println!("{:?}", new_reading);
 }
