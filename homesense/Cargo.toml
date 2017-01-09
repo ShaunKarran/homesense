@@ -1,10 +1,20 @@
 [package]
-name = "homesense-server"
+name = "homesense"
 version = "0.1.0"
 authors = ["Shaun Karran <shaun.karran@gmail.com>"]
 
+[[bin]]
+name = "hs-logger"
+path = "src/bin/logger.rs"
+
+[[bin]]
+name = "hs-webserver"
+path = "src/bin/webserver.rs"
+
 [dependencies]
 dotenv = "0.8.0"
+rocket = "0.1.4"
+rocket_codegen = "0.1.4"
 rustc-serialize = "0.3"
 
 [dependencies.chrono]

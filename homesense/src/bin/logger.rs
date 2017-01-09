@@ -1,39 +1,23 @@
-#![feature(proc_macro)]
-
 extern crate chrono;
 #[macro_use] extern crate diesel;
-#[macro_use] extern crate diesel_codegen;
-extern crate dotenv;
 extern crate rustc_serialize;
 
-use std::env;
+extern crate homesense;
+
+
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
 use std::thread;
 
 use chrono::Local;
-use diesel::pg::PgConnection;
 use diesel::prelude::*;
-use dotenv::dotenv;
 use rustc_serialize::json;
 
-use self::models::NewReading;
-use schema::readings;
+use homesense::models::NewReading;
+use homesense::schema::readings;
+use homesense::utils;
 
-pub mod schema;
-pub mod models;
-
-
-fn establish_connection() -> PgConnection {
-    dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set.");
-
-    PgConnection::establish(&database_url)
-        .expect(&format!("Error connecting to {}.", database_url))
-}
 
 fn handle_client(stream: TcpStream) {
     let mut reader = BufReader::new(stream);
@@ -49,7 +33,7 @@ fn handle_client(stream: TcpStream) {
     new_reading.recorded_at = Some(Local::now().naive_local());
 
     // Add the NewReading to the database.
-    let db_connection = establish_connection();
+    let db_connection = utils::establish_db_connection();
     diesel::insert(&new_reading)
         .into(readings::table)
         .execute(&db_connection)
@@ -59,7 +43,7 @@ fn handle_client(stream: TcpStream) {
 }
 
 fn main() {
-    let listener = TcpListener::bind("192.168.1.100:12345").unwrap();
+    let listener = TcpListener::bind("192.168.1.12:12345").unwrap();
 
     // Accept connections and process them, spawning a new thread for each one.
     for stream in listener.incoming() {
