@@ -12,10 +12,6 @@ use homesense::models::Reading;
 use homesense::schema::readings::dsl::readings;
 use homesense::utils;
 
-#[get("/hello/<name>/<age>")]
-fn hello(name: &str, age: u8) -> String {
-    format!("Hello, {} year old named {}!", age, name)
-}
 
 #[get("/current_temp")]
 fn current_temp() -> String {
@@ -30,5 +26,5 @@ fn current_temp() -> String {
 }
 
 fn main() {
-    rocket::ignite().mount("/", routes![hello, current_temp]).launch();
+    rocket::ignite().mount("/", routes![current_temp]).launch();
 }
