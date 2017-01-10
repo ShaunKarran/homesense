@@ -1,33 +1,54 @@
 #![feature(plugin)]
 #![plugin(rocket_codegen)]
 
+extern crate chrono;
 extern crate diesel;
 extern crate rocket;
 
 extern crate homesense;
 
+use std::fmt::Write;
+
+// use chrono::Local;
 use diesel::expression::helper_types::Desc;
 use diesel::prelude::*;
 
 use homesense::models::Reading;
-use homesense::schema::readings::dsl::readings;
 use homesense::utils;
 
 
-#[get("/current_temp")]
-fn current_temp() -> String {
+#[get("/latest_temp")]
+fn latest_temp() -> String {
+    use homesense::schema::readings::dsl::*;
+
     let db_connection = utils::establish_db_connection();
 
-    // Use descending order and limit of 1 to get latest reading.
     let results = readings
+        // .filter(recorded_at.is_not_null())
+        // .filter(recorded_at.lt(Local::now())
+        // .filter(device_id.lt(10))
         .order(Desc::new(homesense::schema::readings::recorded_at))
-        .limit(1)
+        .limit(5)
         .load::<Reading>(&db_connection)
         .expect("Error loading readings");
 
-    format!("The current temperature is {}C", results[0].temperature.unwrap())
+    let mut results_string = String::new();
+
+    writeln!(&mut results_string, "<table border='1'>").unwrap();
+    writeln!(&mut results_string, "<tr><th>Recorded at</th><th>Temperature</th></tr>").unwrap();
+    for result in results {
+        writeln!(
+            &mut results_string,
+            "<tr><td>{}</td><td>{}C</td></tr>",
+            result.recorded_at.unwrap(),
+            result.temperature.unwrap()
+        ).unwrap();
+    };
+    writeln!(&mut results_string, "</table>").unwrap();
+
+    results_string
 }
 
 fn main() {
-    rocket::ignite().mount("/", routes![current_temp]).launch();
+    rocket::ignite().mount("/", routes![latest_temp]).launch();
 }
