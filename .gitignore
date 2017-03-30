@@ -7,4 +7,4 @@
 *Cargo.lock
 
 # Dont commit any wifi credentials.
-esp8266/wifi_credentials.h
+*/wifi_credentials.*
