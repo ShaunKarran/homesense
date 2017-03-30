@@ -7,4 +7,4 @@
 *Cargo.lock
 
 # Dont commit any wifi credentials.
-*/wifi_credentials.*
+wifi_credentials.*
