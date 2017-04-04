@@ -1,28 +1,56 @@
-import ujson
+import esp
+import machine
+import socket
 
+from credentials import EMONCMS_WRITE_KEY
+import esp_homesense
 
-def json_load(file_name):
-    with open(file_name, 'r') as f:
-        data = ujson.loads(f.read())
+# Configure the onboard LED and set it to off.
+LED = machine.Pin(2, machine.Pin.OUT)
+LED.high()
 
-    return data
+# Configure RTC.ALARM0 to be able to wake the device.
+rtc = machine.RTC()
+rtc.irq(trigger=rtc.ALARM0, wake=machine.DEEPSLEEP)
 
+# Check if the device woke from a deep sleep.
+if machine.reset_cause() != machine.DEEPSLEEP_RESET:
+    # TODO Possibly use a non-deepsleep wake as a way to make the device wait so I can use the REPL.
+    print('Did not wake from deepsleep.')
+else:
+    print('Woke from deepsleep.')
 
-def json_dump(file_name, data):
-    with open(file_name, 'w') as f:
-        f.write(ujson.dumps(data))
+host = 'emoncms.org'
 
+device_id = esp.flash_id()
 
-test_dict = {
-    1: '1',
-    2: '2',
-    3: '3',
-    4: '4',
-    5: '5',
-}
+temperature = esp_homesense.read_temperature()
+print('Temperature: {}'.format(temperature))
 
-json_dump('test.json', test_dict)
+# TODO Copied from internet. Not sure if working.
+vcc = machine.ADC(1)
+voltage = vcc.read()
 
-test_load = json_load('test.json')
+json = '{{temperature:{temp}}}'.format(temp=temperature)
+url = '/input/post.json?node={}&apikey={}&json={}'.format(device_id, EMONCMS_WRITE_KEY, json)
+message = 'GET {url} HTTP/1.1\r\nHost: {host}\r\n\r\n'.format(url=url, host=host)
+print('Message: {}'.format(bytes(message, 'utf8')))
 
-print(test_load)
+# connection = http_client.HTTPConnection(host)
+# connection.request('GET', url)
+# response = connection.getresponse()
+# print(response.read())
+
+http_port = 80
+addr = socket.getaddrinfo(host, 80)[0][-1]
+s = socket.socket()
+s.connect(addr)
+s.send(bytes(message, 'utf8'))
+s.close()
+
+# import time; time.sleep(60)  # Hopefully give me a change to get into REPL for debugging.
+
+# Set RTC.ALARM0 to fire after 10 seconds (waking the device).
+# print('Entering deepsleep.')
+# rtc.alarm(rtc.ALARM0, 10 * 1000)  # 10s * 1000ms
+# machine.deepsleep()
