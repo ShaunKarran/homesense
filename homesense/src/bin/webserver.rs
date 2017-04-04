@@ -9,7 +9,7 @@ extern crate homesense;
 
 use std::fmt::Write;
 
-// use chrono::Local;
+use chrono::Local;
 use diesel::expression::helper_types::Desc;
 use diesel::prelude::*;
 
@@ -35,15 +35,16 @@ fn latest_temp() -> String {
     let mut results_string = String::new();
 
     writeln!(&mut results_string, "<table border='1'>").unwrap();
-    writeln!(&mut results_string, "<tr><th>Recorded at</th><th>Temperature</th></tr>").unwrap();
+    writeln!(&mut results_string,
+             "<tr><th>Recorded at</th><th>Temperature</th></tr>")
+        .unwrap();
     for result in results {
-        writeln!(
-            &mut results_string,
-            "<tr><td>{}</td><td>{}C</td></tr>",
-            result.recorded_at.unwrap(),
-            result.temperature.unwrap()
-        ).unwrap();
-    };
+        writeln!(&mut results_string,
+                 "<tr><td>{}</td><td>{}C</td></tr>",
+                 result.recorded_at.unwrap(),
+                 result.temperature.unwrap())
+            .unwrap();
+    }
     writeln!(&mut results_string, "</table>").unwrap();
 
     results_string

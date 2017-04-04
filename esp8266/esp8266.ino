@@ -8,20 +8,24 @@
 // Stores the SSID and PASSWORD. eg.
 // const char* SSID = "My WiFi";
 // const char* PASSWORD = "mypassword";
-#include "wifi_credentials.h"
+#include "credentials.h"
 
 // Must be unique for every ESP connecting to the same server.
 const uint8_t DEVICE_ID = 0;
 
-// IP and port to connect and send data.
-const char* HOST = "192.168.1.12";
-const uint16_t PORT = 12345;
+// IP and port to connect to local sever and send data.
+// const char* HOST = "192.168.1.5";
+// const uint16_t PORT = 12345;
+
+// For using EMONCMS instead of local server.
+const char* HOST = "emoncms.org";
+const uint16_t PORT = 80; // HTTP port.
 
 // Time to sleep (in seconds).
-const uint16_t SECONDS_TO_SLEEP = 300;
+const uint16_t SECONDS_TO_SLEEP = 10;
 
 // Data wire is plugged into pin D1 on the ESP.
-const uint8_t ONE_WIRE_BUS = D1;
+const uint8_t ONE_WIRE_BUS = D2;
 
 OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices.
 DallasTemperature sensors(&oneWire); // Pass our oneWire reference to Dallas Temperature.
@@ -36,7 +40,7 @@ void setup() {
         delay(500);
         Serial.print(".");
     }
-    
+
     Serial.println("");
     Serial.print("Connected to ");
     Serial.println(SSID);
@@ -50,10 +54,10 @@ void setup() {
 
 void loop() {
     WiFiClient client;
-    
+
     if (client.connect(HOST, PORT)) {
         Serial.println("Connected to the host!");
-        
+
         Serial.print("Requesting temperatures from the thermometer... ");
         sensors.requestTemperaturesByIndex(0);
         Serial.println("DONE.");
@@ -64,12 +68,15 @@ void loop() {
         } else if (temperature == 127.0 || temperature == -127.00) {
             Serial.println("Thermometer error.");
         } else {
-            String data = create_json(temperature);
+            String json = create_json(temperature);
             Serial.print("Sending data: ");
-            Serial.println(data);
+            Serial.println(json);
 
             Serial.println("Sending data to the server.");
-            client.print(data);
+            // client.print(json);
+            String url = create_url(json);
+            String message = create_message(url);
+            client.print(message);
         }
     } else {
         Serial.println("Connection failed!");
@@ -85,14 +92,39 @@ void loop() {
 
 String create_json(float temperature) {
     String json = "{";
-    json += "\"device_id\": ";
-    json += DEVICE_ID;
-    json += ", ";
-    json += "\"temperature\": ";
+    // json += "\"device_id\": ";
+    // json += "device_id:";
+    // json += DEVICE_ID;
+    // json += ",";
+    // json += "\"temperature\": ";
+    json += "temperature:";
     json += temperature;
     json += "}";
-    json += "\n";
+    // json += "\n";
 
     return json;
+}
+
+String create_url(String json) {
+    String url = "/input/post.json?node=";
+    url += DEVICE_ID;
+    url += "&apikey=";
+    url += EMONCMS_WRITE_KEY;
+    url += "&json=";
+    url += json;
+
+    return url;
+}
+
+
+String create_message(String url) {
+    String message = "GET ";
+    message += url;
+    message += " HTTP/1.1\r\nHost: ";
+    message += HOST;
+    // message += "\r\n\r\n";
+    message += "\r\nConnection: close\r\n\r\n";
+
+    return message;
 }
 

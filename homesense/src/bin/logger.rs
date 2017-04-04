@@ -1,9 +1,9 @@
 extern crate chrono;
-#[macro_use] extern crate diesel;
+#[macro_use]
+extern crate diesel;
 extern crate rustc_serialize;
 
 extern crate homesense;
-
 
 use std::io::BufReader;
 use std::io::prelude::*;
@@ -24,12 +24,10 @@ fn handle_client(stream: TcpStream) {
     let mut line = String::new();
 
     // Read the contents from the tcp stream into a String.
-    reader.read_line(&mut line)
-        .expect("Error reading line from BufReader.");
+    reader.read_line(&mut line).expect("Error reading line from BufReader.");
 
     // Decode the data into a NewReading and record the current date & time.
-    let mut new_reading: NewReading = json::decode(&line)
-        .expect("Error decoding json data.");
+    let mut new_reading: NewReading = json::decode(&line).expect("Error decoding json data.");
     new_reading.recorded_at = Some(Local::now().naive_local());
 
     // Add the NewReading to the database.
@@ -43,13 +41,13 @@ fn handle_client(stream: TcpStream) {
 }
 
 fn main() {
-    let listener = TcpListener::bind("192.168.1.12:12345").unwrap();
+    let listener = TcpListener::bind("192.168.1.5:12345").unwrap();
 
     // Accept connections and process them, spawning a new thread for each one.
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
-                thread::spawn(move|| handle_client(stream));
+                thread::spawn(move || handle_client(stream));
             }
             Err(e) => {
                 println!("{:?}", e); /* Connection failed. Print the error and continue. */
