@@ -53,6 +53,7 @@ void setup() {
 }
 
 void loop() {
+    // TODO: This all sould go in setup() because it never actually loops.
     WiFiClient client;
 
     if (client.connect(HOST, PORT)) {
@@ -74,16 +75,16 @@ void loop() {
 
             Serial.println("Sending data to the server.");
             // client.print(json);
-            String url = create_url(json);
-            String message = create_message(url);
+            String url = create_url(json, EMONCMS_WRITE_KEY);
+            String message = create_message(url, HOST);
             client.print(message);
         }
+
+        client.stop();
+        Serial.println("Disconnected from host.");
     } else {
         Serial.println("Connection failed!");
     }
-
-    client.stop();
-    Serial.println("Disconnected from host.");
 
     Serial.println("Going to sleep.\n");
     delay(100);
@@ -105,11 +106,11 @@ String create_json(float temperature) {
     return json;
 }
 
-String create_url(String json) {
+String create_url(String json, String apikey) {
     String url = "/input/post.json?node=";
     url += DEVICE_ID;
     url += "&apikey=";
-    url += EMONCMS_WRITE_KEY;
+    url += apikey;
     url += "&json=";
     url += json;
 
@@ -117,11 +118,11 @@ String create_url(String json) {
 }
 
 
-String create_message(String url) {
+String create_message(String url, String host) {
     String message = "GET ";
     message += url;
     message += " HTTP/1.1\r\nHost: ";
-    message += HOST;
+    message += host;
     // message += "\r\n\r\n";
     message += "\r\nConnection: close\r\n\r\n";
 
