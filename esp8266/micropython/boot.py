@@ -4,11 +4,5 @@
 import gc
 import webrepl
 
-import wifi
-import wifi_credentials
-
-
 webrepl.start()
 gc.collect()
-
-wifi.connect(wifi_credentials.SSID, wifi_credentials.PASSWORD)

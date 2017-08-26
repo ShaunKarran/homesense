@@ -12,10 +12,8 @@
 
 #define MQTT_VERSION MQTT_VERSION_3_1_1
 
-// MQTT: topic
 const PROGMEM char* MQTT_SENSOR_TOPIC = "shaun_bedroom/sensor";
 
-// sleeping time
 const PROGMEM uint16_t SLEEPING_TIME_IN_SECONDS = 900; // 15 minutes x 60 seconds
 
 // DHT - D1/GPIO5
@@ -31,6 +29,25 @@ void callback(char* p_topic, byte* p_payload, unsigned int p_length) {
     // Do nothing.
 }
 
+void wifi_connect(char* ssid, char* password) {
+    Serial.println("");
+    Serial.println("");
+    Serial.print("INFO: Connecting to ");
+    Serial.println(ssid);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+
+    Serial.println("");
+    Serial.println("INFO: WiFi connected");
+    Serial.println("INFO: IP address: ");
+    Serial.println(WiFi.localIP());
+}
+
 // Function called to publish the temperature and the humidity.
 void publish_data(float temperature, float humidity) {
     // Create a JSON object. Docs: https://github.com/bblanchon/ArduinoJson/wiki/API%20Reference
@@ -43,7 +60,7 @@ void publish_data(float temperature, float humidity) {
     Serial.println("");
     /*
     {
-        "temperature": "23.20" ,
+        "temperature": "23.20",
         "humidity": "43.70"
     }
     */
@@ -61,22 +78,7 @@ void setup() {
     dht.begin();
 
     // Initialise the WiFi connection.
-    Serial.println("");
-    Serial.println("");
-    Serial.print("INFO: Connecting to ");
-    Serial.println(WIFI_SSID);
-    // WiFi.mode(WIFI_STA);  // NOTE: Not sure what this is for?
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-
-    Serial.println("");
-    Serial.println("INFO: WiFi connected");
-    Serial.println("INFO: IP address: ");
-    Serial.println(WiFi.localIP());
+    wifi_connect(WIFI_SSID, WIFI_PASSWORD);
 
     // Initialise the MQTT connection.
     mqtt_client.setServer(MQTT_SERVER_IP, MQTT_SERVER_PORT);
@@ -88,7 +90,7 @@ void setup() {
         Serial.print("INFO: Attempting MQTT connection");
         // Attempt to connect
         if (mqtt_client.connect(MQTT_CLIENT_ID, MQTT_USER, MQTT_PASSWORD)) {
-            Serial.println("INFO: Connected");
+            Serial.println("INFO: MQTT connected");
         } else {
             Serial.print("ERROR: Failed, rc=");
             Serial.print(mqtt_client.state());
@@ -120,6 +122,7 @@ void setup() {
     WiFi.disconnect();
 
     // Argument is in micro seconds. Multiply by 1e6 for seconds.
+    Serial.println("INFO: Entering deepsleep");
     ESP.deepSleep(SLEEPING_TIME_IN_SECONDS * 1000000, WAKE_RF_DEFAULT);
     delay(500); // wait for deep sleep to happen
 }
